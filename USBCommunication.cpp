@@ -65,13 +65,13 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
         GetProcAddress(GetModuleHandle(TEXT("Setupapi.dll")), "SetupDiGetDevicePropertyW");
 
     // List all connected USB devices
-    hDevInfo = SetupDiGetClassDevs(pClassGuid, pszEnumerator, NULL,
-        pClassGuid != NULL ? DIGCF_PRESENT : DIGCF_ALLCLASSES | DIGCF_PRESENT);
+    hDevInfo = SetupDiGetClassDevs(pClassGuid, pszEnumerator, NULL, pClassGuid != NULL ? DIGCF_PRESENT : DIGCF_ALLCLASSES | DIGCF_PRESENT);
     if (hDevInfo == INVALID_HANDLE_VALUE)
         return;
 
     // Find the ones that are driverless
-    for (i = 0; ; i++) {
+    for (i = 0; ; i++) 
+    {
         DeviceInfoData.cbSize = sizeof(DeviceInfoData);
         if (!SetupDiEnumDeviceInfo(hDevInfo, i, &DeviceInfoData))
             break;
@@ -142,24 +142,28 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
         }
 
         pszToken = _tcstok_s(szDeviceInstanceID, TEXT("\\#&"), &pszNextToken);
-        while (pszToken != NULL) {
+        while (pszToken != NULL) 
+        {
             szVid[0] = TEXT('\0');
             szPid[0] = TEXT('\0');
             szMi[0] = TEXT('\0');
-            for (j = 0; j < 3; j++) {
-                if (_tcsncmp(pszToken, arPrefix[j], lstrlen(arPrefix[j])) == 0) {
-                    switch (j) {
-                    case 0:
-                        _tcscpy_s(szVid, ARRAY_SIZE(szVid), pszToken);
-                        break;
-                    case 1:
-                        _tcscpy_s(szPid, ARRAY_SIZE(szPid), pszToken);
-                        break;
-                    case 2:
-                        _tcscpy_s(szMi, ARRAY_SIZE(szMi), pszToken);
-                        break;
-                    default:
-                        break;
+            for (j = 0; j < 3; j++) 
+            {
+                if (_tcsncmp(pszToken, arPrefix[j], lstrlen(arPrefix[j])) == 0) 
+                {
+                    switch (j) 
+                    {
+                        case 0:
+                            _tcscpy_s(szVid, ARRAY_SIZE(szVid), pszToken);
+                            break;
+                        case 1:
+                            _tcscpy_s(szPid, ARRAY_SIZE(szPid), pszToken);
+                            break;
+                        case 2:
+                            _tcscpy_s(szMi, ARRAY_SIZE(szMi), pszToken);
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
