@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "USBCommunication", "USBCommunication.vcxproj", "{12FF6E8B-C50B-47C5-846A-B728FB655873}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Debug|x64.ActiveCfg = Debug|x64
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Debug|x64.Build.0 = Debug|x64
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Debug|x86.ActiveCfg = Debug|Win32
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Debug|x86.Build.0 = Debug|Win32
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Release|x64.ActiveCfg = Release|x64
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Release|x64.Build.0 = Release|x64
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Release|x86.ActiveCfg = Release|Win32
+		{12FF6E8B-C50B-47C5-846A-B728FB655873}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {200D7D10-AC57-4E24-9933-78F9DF6B372D}
+	EndGlobalSection
+EndGlobal
