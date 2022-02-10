@@ -61,8 +61,7 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
     WCHAR szBuffer[4096];
     LPTSTR pszToken, pszNextToken;
     TCHAR szVid[MAX_DEVICE_ID_LEN], szPid[MAX_DEVICE_ID_LEN], szMi[MAX_DEVICE_ID_LEN];
-    FN_SetupDiGetDevicePropertyW fn_SetupDiGetDevicePropertyW = (FN_SetupDiGetDevicePropertyW)
-        GetProcAddress(GetModuleHandle(TEXT("Setupapi.dll")), "SetupDiGetDevicePropertyW");
+  
 
     // List all connected USB devices
     hDevInfo = SetupDiGetClassDevs(pClassGuid, pszEnumerator, NULL, pClassGuid != NULL ? DIGCF_PRESENT : DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -107,38 +106,54 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
         // On Vista and earlier, we can use only SPDRP_DEVICEDESC
         // On Windows 7, the information we want ("Bus reported device description") is
         // accessed through DEVPKEY_Device_BusReportedDeviceDesc
-        if (fn_SetupDiGetDevicePropertyW && fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_BusReportedDeviceDesc,
-            &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) {
+        if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_BusReportedDeviceDesc,
+            &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) 
+        {
 
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_BusReportedDeviceDesc,
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_BusReportedDeviceDesc,
                 &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0))
+            {
                 _tprintf(TEXT("    Bus Reported Device Description: \"%ls\"\n"), szBuffer);
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_Manufacturer,
-                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) {
+            }
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_Manufacturer,
+                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) 
+            {
                 _tprintf(TEXT("    Device Manufacturer: \"%ls\"\n"), szBuffer);
             }
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_FriendlyName,
-                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) {
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_FriendlyName,
+                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) 
+            {
                 _tprintf(TEXT("    Device Friendly Name: \"%ls\"\n"), szBuffer);
             }
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_LocationInfo,
-                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) {
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_LocationInfo,
+                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) 
+            {
                 _tprintf(TEXT("    Device Location Info: \"%ls\"\n"), szBuffer);
             }
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_SecuritySDS,
-                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) {
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_SecuritySDS,
+                &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0)) 
+            {
                 // See Security Descriptor Definition Language on MSDN
                 // (http://msdn.microsoft.com/en-us/library/windows/desktop/aa379567(v=vs.85).aspx)
                 _tprintf(TEXT("    Device Security Descriptor String: \"%ls\"\n"), szBuffer);
             }
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_ContainerId,
-                &ulPropertyType, (BYTE*)szDesc, sizeof(szDesc), &dwSize, 0)) {
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_Device_ContainerId,
+                &ulPropertyType, (BYTE*)szDesc, sizeof(szDesc), &dwSize, 0)) 
+            {
                 StringFromGUID2((REFGUID)szDesc, szBuffer, ARRAY_SIZE(szBuffer));
                 _tprintf(TEXT("    ContainerId: \"%ls\"\n"), szBuffer);
             }
-            if (fn_SetupDiGetDevicePropertyW(hDevInfo, &DeviceInfoData, &DEVPKEY_DeviceDisplay_Category,
+
+            if (SetupDiGetDeviceProperty(hDevInfo, &DeviceInfoData, &DEVPKEY_DeviceDisplay_Category,
                 &ulPropertyType, (BYTE*)szBuffer, sizeof(szBuffer), &dwSize, 0))
+            {
                 _tprintf(TEXT("    Device Display Category: \"%ls\"\n"), szBuffer);
+            }
         }
 
         pszToken = _tcstok_s(szDeviceInstanceID, TEXT("\\#&"), &pszNextToken);
