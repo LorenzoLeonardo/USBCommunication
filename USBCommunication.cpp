@@ -8,6 +8,9 @@
 #define INITGUID
 #include <tchar.h>
 #include <stdio.h>
+#include <hidsdi.h>
+#include <initguid.h>
+#include <Usbiodef.h>
 
 #pragma comment (lib,"Setupapi.lib")
 #pragma comment (lib,"Hid.lib")
@@ -68,6 +71,16 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
     if (hDevInfo == INVALID_HANDLE_VALUE)
         return;
 
+
+        DWORD requiredSize = 0;
+    SP_DEVICE_INTERFACE_DATA			devInterfceData;
+
+
+    i = 0;
+
+
+    
+
     // Find the ones that are driverless
     for (i = 0; ; i++) 
     {
@@ -78,7 +91,6 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
         status = CM_Get_Device_ID(DeviceInfoData.DevInst, szDeviceInstanceID, MAX_PATH, 0);
         if (status != CR_SUCCESS)
             continue;
-
         // Display device instance ID
         _tprintf(TEXT("%s\n"), szDeviceInstanceID);
 
@@ -101,7 +113,7 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
                 _tprintf(TEXT("        \"%s\"\n"), pszId);
             }
         }
-
+      
         // Retreive the device description as reported by the device itself
         // On Vista and earlier, we can use only SPDRP_DEVICEDESC
         // On Windows 7, the information we want ("Bus reported device description") is
@@ -195,10 +207,150 @@ void ListDevices(CONST GUID* pClassGuid, LPCTSTR pszEnumerator)
     return;
 }
 
+bool OpenUSBinterface() {
+
+    HDEVINFO hDevInfo;
+    SP_DEVINFO_DATA DeviceInfoData;
+    SP_DEVICE_INTERFACE_DATA DeviceInterfaceData;
+    struct _GUID GUID;
+    HidD_GetHidGuid(&GUID);
+    DWORD i;
+    DWORD InterfaceNumber = 0;
+
+    // Create a HDEVINFO with all present devices.
+    hDevInfo = SetupDiGetClassDevs(&GUID,
+        0, // Enumerator
+        0,
+        DIGCF_PRESENT | DIGCF_INTERFACEDEVICE);
+
+    if (hDevInfo == INVALID_HANDLE_VALUE)
+    {
+        // Insert error handling here.
+        return 1;
+    }
+
+    // Enumerate through all devices in Set.
+
+    DeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+    for (i = 0; SetupDiEnumDeviceInfo(hDevInfo, i,
+        &DeviceInfoData); i++)
+    {
+        DWORD DataT;
+        LPTSTR buffer = NULL;
+        DWORD buffersize = 0;
+
+        //
+        // Call function with null to begin with,
+        // then use the returned buffer size
+        // to Alloc the buffer. Keep calling until
+        // success or an unknown failure.
+        //
+        while (!SetupDiGetDeviceRegistryProperty(
+            hDevInfo,
+            &DeviceInfoData,
+            SPDRP_DEVICEDESC,
+            &DataT,
+            (PBYTE)buffer,
+            buffersize,
+            &buffersize))
+        {
+            if (GetLastError() ==
+                ERROR_INSUFFICIENT_BUFFER)
+            {
+                // Change the buffer size.
+                if (buffer) LocalFree(buffer);
+                buffer = (LPTSTR)LocalAlloc(LPTR, buffersize);
+            }
+            else
+            {
+                // Insert error handling here.
+                break;
+            }
+        }
+
+        _tprintf(TEXT("Device Number %i is: %s\n"), i, buffer);
+
+        if (buffer) LocalFree(buffer);
+    }
+
+    if (GetLastError() != NO_ERROR &&
+        GetLastError() != ERROR_NO_MORE_ITEMS)
+    {
+        // Insert error handling here.
+        return false;
+    }
+    InterfaceNumber = 0;  // this just returns the first one, you can iterate on this
+    DeviceInterfaceData.cbSize = sizeof(DeviceInterfaceData);
+    if (SetupDiEnumDeviceInterfaces(
+        hDevInfo,
+        NULL,
+        &GUID,
+        InterfaceNumber,
+        &DeviceInterfaceData))
+
+        printf("\nGot interface");
+    else
+    {
+        printf("\nNo interface");
+        //ErrorExit((LPTSTR) "SetupDiEnumDeviceInterfaces");
+        if (GetLastError() == ERROR_NO_MORE_ITEMS) printf(", since there are no more items found.");
+        else printf(", unknown reason.");
+    }
+
+
+
+
+
+
+    //  Cleanup
+    SetupDiDestroyDeviceInfoList(hDevInfo);
+    return true;
+}
+
+BOOL DevicePath(_In_ LPCGUID interfaceGuid, DWORD instance)
+{
+    BOOL result = FALSE;
+    PSP_DEVICE_INTERFACE_DETAIL_DATA_W devInterfaceDetailData = NULL;
+
+    HDEVINFO hDevInfo = SetupDiGetClassDevsW(interfaceGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
+    if (hDevInfo == INVALID_HANDLE_VALUE)
+        goto cleanup;
+
+    SP_DEVICE_INTERFACE_DATA devInterfaceData;
+    devInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+    if (!SetupDiEnumDeviceInterfaces(hDevInfo, NULL, interfaceGuid, instance, &devInterfaceData))
+        goto cleanup;
+
+    // Call this with an empty buffer to the required size of the structure.
+    ULONG requiredSize;
+    SetupDiGetDeviceInterfaceDetailW(hDevInfo, &devInterfaceData, NULL, 0, &requiredSize, NULL);
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        goto cleanup;
+
+    devInterfaceDetailData = (PSP_DEVICE_INTERFACE_DETAIL_DATA_W)malloc(requiredSize);
+    if (!devInterfaceDetailData)
+        goto cleanup;
+
+    devInterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+    if (!SetupDiGetDeviceInterfaceDetailW(hDevInfo, &devInterfaceData, devInterfaceDetailData, requiredSize, &requiredSize, NULL))
+        goto cleanup;
+
+    wprintf(L"%s\n", devInterfaceDetailData->DevicePath);
+    result = TRUE;
+
+cleanup:
+    if (hDevInfo != INVALID_HANDLE_VALUE)
+        SetupDiDestroyDeviceInfoList(hDevInfo);
+    free(devInterfaceDetailData);
+    return result;
+}
+
 int _tmain()
 {
+    GUID g = GUID_DEVINTERFACE_USB_DEVICE;
+    DevicePath(&g,0);
     // List all connected USB devices
-    _tprintf(TEXT("---------------\n"));
+  /*  _tprintf(TEXT("---------------\n"));
     _tprintf(TEXT("- USB devices -\n"));
     _tprintf(TEXT("---------------\n"));
     ListDevices(NULL, TEXT("USB"));
@@ -209,30 +361,30 @@ int _tmain()
     _tprintf(TEXT("-------------------\n"));
     ListDevices(NULL, TEXT("USBSTOR"));
 
-    _tprintf(TEXT("\n"));
+      _tprintf(TEXT("\n"));
     _tprintf(TEXT("--------------\n"));
     _tprintf(TEXT("- SD devices -\n"));
     _tprintf(TEXT("--------------\n"));
     ListDevices(NULL, TEXT("SD"));
+    */
+    _tprintf (TEXT("\n"));
+    ListDevices(&GUID_DEVCLASS_USB, NULL);
+    _tprintf (TEXT("\n"));
 
-    //_tprintf (TEXT("\n"));
-    //ListDevices(&GUID_DEVCLASS_USB, NULL);
-    //_tprintf (TEXT("\n"));
-
-    _tprintf(TEXT("\n"));
-    _tprintf(TEXT("-----------\n"));
-    _tprintf(TEXT("- Volumes -\n"));
-    _tprintf(TEXT("-----------\n"));
+  //  _tprintf(TEXT("\n"));
+  //  _tprintf(TEXT("-----------\n"));
+   // _tprintf(TEXT("- Volumes -\n"));
+  //  _tprintf(TEXT("-----------\n"));
     //ListDevices(NULL, TEXT("STORAGE\\VOLUME"));
     //_tprintf (TEXT("\n"));
-    ListDevices(&GUID_DEVCLASS_VOLUME, NULL);
-
+   // ListDevices(&GUID_DEVCLASS_VOLUME, NULL);
+/*
     _tprintf(TEXT("\n"));
     _tprintf(TEXT("----------------------------\n"));
     _tprintf(TEXT("- devices with disk drives -\n"));
     _tprintf(TEXT("----------------------------\n"));
-    ListDevices(&GUID_DEVCLASS_DISKDRIVE, NULL);
-
+    ListDevices(&GUID_DEVCLASS_DISKDRIVE, NULL);*/
+    
     return 0;
 }
 
