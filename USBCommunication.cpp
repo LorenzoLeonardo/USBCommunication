@@ -311,6 +311,9 @@ BOOL DevicePath(_In_ LPCGUID interfaceGuid, DWORD instance)
 {
     BOOL result = FALSE;
     PSP_DEVICE_INTERFACE_DETAIL_DATA_W devInterfaceDetailData = NULL;
+    HANDLE hHCDev = NULL;
+    UCHAR buffer[65536];
+    DWORD dwLen = 0;
 
     HDEVINFO hDevInfo = SetupDiGetClassDevsW(interfaceGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
     if (hDevInfo == INVALID_HANDLE_VALUE)
@@ -337,11 +340,25 @@ BOOL DevicePath(_In_ LPCGUID interfaceGuid, DWORD instance)
 
     wprintf(L"%s\n", devInterfaceDetailData->DevicePath);
     result = TRUE;
+    hHCDev = CreateFile(devInterfaceDetailData->DevicePath,
+        GENERIC_WRITE,
+        FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL);
 
+   
+
+    if (ReadFile(hHCDev, buffer, sizeof(buffer), &dwLen, NULL))
+    {
+        printf("%s", buffer);
+    }
 cleanup:
     if (hDevInfo != INVALID_HANDLE_VALUE)
         SetupDiDestroyDeviceInfoList(hDevInfo);
     free(devInterfaceDetailData);
+    CloseHandle(hHCDev);
     return result;
 }
 
